@@ -1,6 +1,5 @@
 // ============================================================
-// VETSTOCK - Veterinary Drugs Wholesale Manager
-// Single-file app: inventory, expiry, profit, customer credit
+// VETSTOCK / MuBa - Veterinary Drugs Wholesale Manager
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
@@ -50,8 +49,9 @@ class DB {
 
   Future<int> insertDrug(Map<String, dynamic> d) async {
     final db = await database;
-    d.remove('id');
-    return db.insert('drugs', d);
+    final map = Map<String, dynamic>.from(d);
+    map.remove('id');
+    return db.insert('drugs', map);
   }
 
   Future<int> updateDrug(Map<String, dynamic> d) async {
@@ -71,8 +71,9 @@ class DB {
 
   Future<int> insertCustomer(Map<String, dynamic> c) async {
     final db = await database;
-    c.remove('id');
-    return db.insert('customers', c);
+    final map = Map<String, dynamic>.from(c);
+    map.remove('id');
+    return db.insert('customers', map);
   }
 
   Future<int> updateCustomer(Map<String, dynamic> c) async {
@@ -88,8 +89,9 @@ class DB {
 
   Future<int> insertTxn(Map<String, dynamic> t) async {
     final db = await database;
-    t.remove('id');
-    return db.insert('txns', t);
+    final map = Map<String, dynamic>.from(t);
+    map.remove('id');
+    return db.insert('txns', map);
   }
 
   Future<List<Map<String, dynamic>>> getTxns(int customerId) async {
@@ -124,7 +126,7 @@ class VetStockApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'VetStock',
+      title: 'MuBa',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
@@ -136,7 +138,7 @@ class VetStockApp extends StatelessWidget {
 }
 
 // ============================================================
-// HOME PAGE (2 tabs)
+// HOME PAGE
 // ============================================================
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -166,6 +168,7 @@ class _HomePageState extends State<HomePage>
     final d = await DB.instance.getDrugs();
     final c = await DB.instance.getCustomers();
     final b = await DB.instance.getAllBalances();
+    if (!mounted) return;
     setState(() {
       _drugs = d;
       _customers = c;
@@ -214,13 +217,14 @@ class _HomePageState extends State<HomePage>
     return 'OK';
   }
 
-  double _profit(Map d) => (d['sell'] as num).toDouble() - (d['cost'] as num).toDouble();
+  double _profit(Map d) =>
+      (d['sell'] as num).toDouble() - (d['cost'] as num).toDouble();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VetStock'),
+        title: const Text('MuBa'),
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
         bottom: TabBar(
@@ -313,11 +317,13 @@ class _HomePageState extends State<HomePage>
                   final exp = DateTime.parse(d['expiry']);
                   final p = _profit(d);
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: _statusColor(d).withOpacity(0.15),
-                        child: Icon(Icons.medical_services, color: _statusColor(d)),
+                        child:
+                            Icon(Icons.medical_services, color: _statusColor(d)),
                       ),
                       title: Text(d['name'] ?? '',
                           style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -350,17 +356,16 @@ class _HomePageState extends State<HomePage>
                           } else if (v == 'delete') {
                             final ok = await showDialog<bool>(
                               context: context,
-                              builder: (_) => AlertDialog(
+                              builder: (ctx) => AlertDialog(
                                 title: const Text('Delete drug?'),
                                 content: Text('Remove "${d['name']}"?'),
                                 actions: [
                                   TextButton(
                                       onPressed: () =>
-                                          Navigator.pop(context, false),
+                                          Navigator.pop(ctx, false),
                                       child: const Text('Cancel')),
                                   TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
+                                      onPressed: () => Navigator.pop(ctx, true),
                                       child: const Text('Delete')),
                                 ],
                               ),
@@ -453,8 +458,9 @@ class _HomePageState extends State<HomePage>
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor:
-                            bal > 0 ? Colors.red.shade100 : Colors.green.shade100,
+                        backgroundColor: bal > 0
+                            ? Colors.red.shade100
+                            : Colors.green.shade100,
                         child: Icon(Icons.person,
                             color: bal > 0 ? Colors.red : Colors.green),
                       ),
@@ -495,7 +501,7 @@ class _HomePageState extends State<HomePage>
 }
 
 // ============================================================
-// DRUG FORM (Add / Edit)
+// DRUG FORM
 // ============================================================
 class DrugFormPage extends StatefulWidget {
   final Map<String, dynamic>? drug;
@@ -554,7 +560,7 @@ class _DrugFormPageState extends State<DrugFormPage> {
           const SnackBar(content: Text('Fill all required fields')));
       return;
     }
-    final map = {
+    final map = <String, dynamic>{
       if (widget.drug != null) 'id': widget.drug!['id'],
       'name': _name.text.trim(),
       'category': _cat.text.trim(),
@@ -584,8 +590,8 @@ class _DrugFormPageState extends State<DrugFormPage> {
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.number)
           : TextInputType.text,
-      decoration:
-          InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      decoration: InputDecoration(
+          labelText: label, border: const OutlineInputBorder()),
     );
   }
 
@@ -617,9 +623,11 @@ class _DrugFormPageState extends State<DrugFormPage> {
           _field(_qty, 'Quantity *', num: true),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _field(_cost, 'Cost Price *', num: true, dec: true)),
+            Expanded(
+                child: _field(_cost, 'Cost Price *', num: true, dec: true)),
             const SizedBox(width: 10),
-            Expanded(child: _field(_sell, 'Selling Price *', num: true, dec: true)),
+            Expanded(
+                child: _field(_sell, 'Selling Price *', num: true, dec: true)),
           ]),
           const SizedBox(height: 12),
           Card(
@@ -638,7 +646,8 @@ class _DrugFormPageState extends State<DrugFormPage> {
                               color: loss ? Colors.red : Colors.green,
                               fontWeight: FontWeight.bold)),
                     ]),
-                    Text('Total if all sold: \$${(profit * qty).toStringAsFixed(2)}'),
+                    Text(
+                        'Total if all sold: \$${(profit * qty).toStringAsFixed(2)}'),
                   ]),
             ),
           ),
@@ -674,7 +683,7 @@ class _DrugFormPageState extends State<DrugFormPage> {
 }
 
 // ============================================================
-// CUSTOMER FORM (Add / Edit + Sale + Payment)
+// CUSTOMER FORM
 // ============================================================
 class CustomerFormPage extends StatefulWidget {
   final Map<String, dynamic>? customer;
@@ -710,6 +719,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
     if (_c == null) return;
     final t = await DB.instance.getTxns(_c!['id']);
     final b = await DB.instance.getBalance(_c!['id']);
+    if (!mounted) return;
     setState(() {
       _txns = t;
       _balance = b;
@@ -718,11 +728,12 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
 
   Future<void> _saveCustomer() async {
     if (_name.text.trim().isEmpty || _phone.text.trim().isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Name and phone required')));
       return;
     }
-    final map = {
+    final map = <String, dynamic>{
       if (_c != null) 'id': _c!['id'],
       'name': _name.text.trim(),
       'phone': _phone.text.trim(),
@@ -742,15 +753,15 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
   Future<void> _delete() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Delete customer?'),
         content: const Text('All history will be deleted.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(ctx, true),
               child: const Text('Delete')),
         ],
       ),
@@ -764,6 +775,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
   Future<void> _recordSale() async {
     final drugs = await DB.instance.getDrugs();
     if (drugs.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Add drugs first')));
       return;
@@ -837,6 +849,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
     final price = double.tryParse(priceCtrl.text) ?? 0;
     if (qty <= 0) return;
     if (qty > (selected!['qty'] as int)) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Only ${selected!['qty']} in stock')));
       return;
@@ -910,120 +923,3 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-              controller: _name,
-              decoration: const InputDecoration(
-                  labelText: 'Customer Name *',
-                  border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                  labelText: 'Phone *', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(
-              controller: _addr,
-              decoration: const InputDecoration(
-                  labelText: 'Address', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(
-              controller: _limit,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                  labelText: 'Credit Limit (0 = no limit)',
-                  border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _saveCustomer,
-            icon: const Icon(Icons.save),
-            label: Text(isNew ? 'Create Customer' : 'Update Info'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-          if (!isNew) ...[
-            const Divider(height: 40),
-            Card(
-              color: _balance > 0 ? Colors.red.shade50 : Colors.green.shade50,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(children: [
-                  Text(_balance > 0 ? 'OWES YOU' : 'BALANCE',
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.grey)),
-                  Text('\$${_balance.abs().toStringAsFixed(2)}',
-                      style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              _balance > 0 ? Colors.red : Colors.green)),
-                ]),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                  child: ElevatedButton.icon(
-                onPressed: _recordSale,
-                icon: const Icon(Icons.shopping_cart),
-                label: const Text('Sale'),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white),
-              )),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: ElevatedButton.icon(
-                onPressed: _balance > 0 ? _recordPayment : null,
-                icon: const Icon(Icons.payments),
-                label: const Text('Payment'),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white),
-              )),
-            ]),
-            const Divider(height: 40),
-            const Text('History',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            if (_txns.isEmpty)
-              const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: Text('No transactions yet'))),
-            ..._txns.map((t) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: (t['amount'] as num) > 0
-                          ? Colors.red.shade100
-                          : Colors.green.shade100,
-                      child: Icon(
-                          (t['amount'] as num) > 0
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          color: (t['amount'] as num) > 0
-                              ? Colors.red
-                              : Colors.green,
-                          size: 18),
-                    ),
-                    title: Text(t['description'] ?? ''),
-                    subtitle: Text(df.format(DateTime.parse(t['date']))),
-                    trailing: Text(
-                      '${(t['amount'] as num) > 0 ? "+" : ""}\$${(t['amount'] as num).abs().toStringAsFixed(2)}',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: (t['amount'] as num) > 0
-                              ? Colors.red
-                              : Colors.green),
-                    ),
-                  ),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
-}
