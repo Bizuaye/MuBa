@@ -19,9 +19,34 @@ jobs:
           flutter-version: '3.22.0'
           channel: 'stable'
           cache: true
-      - run: flutter pub get
-      - run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
+
+      # Backup our custom files
+      - name: Backup custom files
+        run: |
+          mkdir -p /tmp/backup/lib
+          cp pubspec.yaml /tmp/backup/
+          cp -r lib/. /tmp/backup/lib/
+
+      # Generate full Flutter project structure
+      - name: Generate Flutter project
+        run: flutter create --org com.muba --project-name vetstock .
+
+      # Restore our custom files (overwrite Flutter defaults)
+      - name: Restore custom files
+        run: |
+          cp /tmp/backup/pubspec.yaml .
+          rm -rf lib
+          mkdir -p lib
+          cp -r /tmp/backup/lib/. lib/
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: vetstock-apk
+          name: muba-apk
           path: build/app/outputs/flutter-apk/app-release.apk
